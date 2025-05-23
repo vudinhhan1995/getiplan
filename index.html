@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Địa chỉ IP của bạn (qua Node.js)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            text-align: center;
+            flex-direction: column; /* Cho phép nhiều dòng nội dung */
+        }
+        .container {
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            font-size: 1.2em;
+            color: #555;
+        }
+        #ip-address {
+            font-weight: bold;
+            color: #007bff;
+        }
+        #wan-ip-container p { /* Kiểu cho thông báo WAN IP */
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        #wan-ip-address {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Địa chỉ IP của bạn (như máy chủ thấy) là:</h1>
+        <p id="ip-address">Đang tải...</p>
+        <div id="wan-ip-container"></div>
+        <p style="font-size: 0.8em; color: #6c757d; margin-top: 15px;">
+            Lưu ý: Địa chỉ IP ở trên là địa chỉ mà máy chủ Node.js (chạy cục bộ) thấy khi bạn kết nối. Nếu bạn và máy chủ ở cùng mạng LAN, đây sẽ là IP LAN của bạn. Bạn cũng có thể thấy IP WAN (công cộng) của mình bên dưới, được lấy từ một dịch vụ bên ngoài.
+        </p>
+    </div>
+
+    <script>
+        async function fetchIpFromServer() {
+            const ipAddressElement = document.getElementById('ip-address');
+            try {
+                const response = await fetch('/api/ip'); // Gọi API trên máy chủ Node.js
+                if (!response.ok) {
+                    throw new Error('Không thể lấy IP từ máy chủ');
+                }
+                const data = await response.json();
+                ipAddressElement.textContent = data.ip || 'Không xác định';
+            } catch (error) {
+                console.error('Lỗi khi lấy IP từ máy chủ:', error);
+                ipAddressElement.textContent = 'Không thể lấy IP từ máy chủ.';
+            }
+        }
+
+        async function fetchWanIpAddress() {
+            const wanIpContainer = document.getElementById('wan-ip-container');
+            wanIpContainer.innerHTML = ''; 
+            
+            const wanIpMessageElement = document.createElement('p');
+            wanIpMessageElement.innerHTML = `Địa chỉ WAN IP (công cộng) của bạn là: <span id="wan-ip-address" style="font-weight: bold; color: #28a745;">Đang tải...</span>`;
+            wanIpContainer.appendChild(wanIpMessageElement);
+            
+            const wanIpDisplayElement = document.getElementById('wan-ip-address');
+
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                if (!response.ok) {
+                    throw new Error('Không thể lấy địa chỉ WAN IP');
+                }
+                const data = await response.json();
+                if (wanIpDisplayElement) {
+                    wanIpDisplayElement.textContent = data.ip;
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy WAN IP:', error);
+                if (wanIpDisplayElement) {
+                    wanIpDisplayElement.textContent = 'Không thể lấy WAN IP.';
+                }
+            }
+        }
+
+        // Gọi các hàm khi trang được tải
+        window.onload = () => {
+            fetchIpFromServer();
+            fetchWanIpAddress(); // Bạn có thể chọn hiển thị hoặc không hiển thị WAN IP
+        };
+    </script>
+</body>
+</html>
